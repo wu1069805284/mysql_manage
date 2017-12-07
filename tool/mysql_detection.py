@@ -32,8 +32,8 @@ def get_cli_options():
 def get_client_info(host, port ,sql):
 
     try:
-        username='detecting'
-        password='0e2bf9ab3e860d39'
+        username=''
+        password=''
         gport=int(port)
         con_db = MySQLdb.connect(host=host,port=gport,user=username,passwd=password)
         dbcur = con_db.cursor()
