@@ -1,0 +1,475 @@
+#!/usr/bin/env python
+
+from __future__ import division
+import time
+import sys
+import os
+import re
+import datetime
+
+
+dbuser= 'dbaeye'
+dbpass= 'NicePrivate@2015'
+host  = '127.0.0.1'
+port  = '3306'
+cmdstr  = ' -h'+host
+cmdstr += ' -u'+dbuser
+cmdstr += ' -p'+dbpass
+cmdstr += ' -P'+port 
+cmdstr += ' -N -e '
+mysqlcmd  = os.popen('which mysql').read().strip('\n')
+mysqlcmd += cmdstr
+
+
+
+def colors(name):
+    colorx = {
+        'blue':    '\x1B[0;36;40m',
+        'green':   '\x1B[0;32;40m',
+        'red':     '\x1B[0;31;40m',
+        'yellow':  '\x1B[0;33;40m',
+        'dblue':   '\x1B[0;34;40m'
+    } 
+    
+    return colorx[name]
+
+
+def baseline():
+    color = colors('blue')
+    firstline  = '--Time--+---- Load ------+------------- SQL ------------------+-Buffer pool-----+-----Thread---------'
+    secondline = '        | 1m   5m    15m | Sel  Ins Upd  Del  Rep | QPS  TPS  |   Lor      Hit  | Run  Con  Cre  Cah '
+    threeline  = '--------+----------------+------------------------+-----------+-----------------+--------------------'
+    
+    print "%s%s\x1B[0m" %(color, firstline)
+    print "%s%s\x1B[0m" %(color, secondline)
+    print "%s%s\x1B[0m" %(color, threeline)
+
+
+def gen_sqlstr(tuple, type):
+    # type==variables, sql like show global variables ...
+    # type==status   , sql like show global status    ...
+    sqlstr = ''
+    if type == 'variables':
+        sqlstr += '"SHOW GLOBAL VARIABLES WHERE Variable_name IN ('
+    elif type == 'status':
+        sqlstr += '"SHOW GLOBAL STATUS    WHERE Variable_name IN ('
+
+    for key in tuple:
+        sqlstr += "'"
+        sqlstr += key
+        sqlstr += "',"
+    sqlstr  = sqlstr.strip(',') 
+    sqlstr += ')"'
+    
+    return sqlstr
+
+def headout(strs):
+    ## split strs with \n 
+    tuple = strs.split('\n')
+    strout = ''
+    strx   = ''
+    
+    i = 1 
+    color1 = colors('dblue')
+    color2 = colors('blue')
+
+    for key in tuple:
+        kv = key.split('\t')
+        if   kv[0] == 'innodb_buffer_pool_size' or \
+             kv[0] == 'innodb_log_buffer_size' or \
+             kv[0] == 'innodb_log_file_size'   or \
+             kv[0] == 'max_binlog_size'        or \
+             kv[0] == 'max_binlog_cache_size':        
+
+             if int(kv[1]) >= 1024*1024*1024:
+                 kv[1] = str(int(kv[1])/1024/1024/1024)
+                 kv[1] += 'G'
+             else:
+                 kv[1] = str(int(kv[1])/1024/1024)
+                 kv[1] += 'M'
+
+        strx += kv[0] + '['
+        strx += str(kv[1]) + ']'
+        print "%s%-35s\x1B[0m" % (color1, strx),
+
+        if i%3 == 0:
+            print '\n',
+        i += 1
+        strx = ''
+
+
+def import_sys_variables():
+  print "---------------------------- Some Import System Variables ------------------------------\n"
+
+def import_mysql_variables():
+    variables_server = [
+        'read_only',
+        'version',
+        'port'
+    ]
+    
+    varcmd = gen_sqlstr(variables_server, 'variables')
+    varcmd = mysqlcmd + varcmd
+    varresult = os.popen(varcmd).read().strip('\n')
+    color = colors('blue')
+    print ''
+    strout = "---- MySQL Server Conf"
+    print "%s%s" % (color, strout)
+    headout(varresult)
+    
+    variables_server = [
+        'binlog_format',
+        'max_binlog_cache_size',
+        'max_binlog_size',
+        'max_connect_errors',
+        'max_connections',
+        'max_user_connections',
+        'open_files_limit',
+        'sync_binlog',
+        'table_definition_cache',
+        'table_open_cache',
+        'thread_cache_size',
+        'back_log'
+    ]
+
+    servercmd = gen_sqlstr(variables_server, 'variables')
+    servercmd = mysqlcmd + servercmd
+    serverresult = os.popen(servercmd).read().strip('\n')
+    headout(serverresult)
+
+    print '' 
+    strout = "---- InnoDB Conf"
+    print "%s%s" % (color, strout)
+
+    variables_innodb = [
+        'innodb_adaptive_flushing',
+        'innodb_adaptive_hash_index',
+        'innodb_buffer_pool_instances',
+        'innodb_buffer_pool_size',
+        'innodb_file_per_table',
+        'innodb_flush_log_at_trx_commit',
+        'innodb_flush_method',
+        'innodb_io_capacity',
+        'innodb_lock_wait_timeout',
+        'innodb_log_buffer_size',
+        'innodb_log_file_size',
+        'innodb_log_files_in_group',
+        'innodb_max_dirty_pages_pct',
+        'innodb_open_files',
+        'innodb_read_io_threads',
+        'innodb_stats_on_metadata',
+        'innodb_thread_concurrency',
+        'innodb_thread_concurrency'
+    ]
+    innodbcmd = gen_sqlstr(variables_innodb, 'variables')
+    innodbcmd = mysqlcmd + innodbcmd
+    innodbresult = os.popen(innodbcmd).read().strip('\n')
+    headout(innodbresult)
+    print '\n'
+
+
+def import_db_info():
+    print "----------------------------------- MySQL Real Time Monitor --------------------------------------\n"
+    skip = {
+          'test': 1,
+          'Database':1,
+          'information_schema':1,
+          'performance_schema':1,
+          'mysql':1}
+    dbcmd = '"SHOW DATABASES"'
+    cmd   = mysqlcmd + dbcmd
+    result = os.popen(cmd).read().strip('\n')
+    result = result.split('\n')
+    userdb = ''
+    for key in result:
+        if skip.has_key(key):
+            continue
+        else:
+            userdb += key
+            userdb += '|'
+    userdb = userdb.strip('|')
+    blue = colors('blue')
+    str = '---- Database List'
+    print "%s%s\x1B[0m" % (blue, str)
+    dblue = colors('dblue')
+    print "%s%s" % (dblue,userdb)
+    
+def getbasekpi():
+    ## The value=0 means need do subtraction, value=1 not need
+    curtime = currenttime()  
+    
+    # printout the current timestamp
+    print "%s|" % curtime,
+   
+    # printout the load 
+    load   = loadinfo()
+    load1  = float(load[0])
+    load5  = float(load[1])
+    load15 = float(load[2])
+     
+   
+    colorprint(loadwarn,loadcritic,load1, 'float')
+    colorprint(loadwarn,loadcritic,load5, 'float')
+    colorprint(loadwarn,loadcritic,load15, 'float')
+    
+    print '|',
+
+    # printout the qps 
+    sqls = qpsinfo() 
+    sel = sqls['sel'] 
+    ins = sqls['ins']
+    upd = sqls['upd']
+    det = sqls['del']
+    rep = sqls['rep']
+    qps = sqls['qps']
+    tps = sqls['tps']
+    
+    colorprint(sqlwarn, sqlcritic, sel, 'int')
+    colorprint(sqlwarn, sqlcritic, ins, 'int')
+    colorprint(sqlwarn, sqlcritic, upd, 'int')
+    colorprint(sqlwarn, sqlcritic, det, 'int')
+    colorprint(sqlwarn, sqlcritic, rep, 'int')
+    colorprint(sqlwarn, sqlcritic, qps, 'int')
+    colorprint(sqlwarn, sqlcritic, tps, 'int')
+
+    print '|',
+    
+    # print out the buffer pool hit
+    buffhit = innobuffhit()
+    lor = buffhit['lor']
+    hit = buffhit['hit']
+
+    print "%-8d" %(lor),
+    red    = colors('red')
+    green  = colors('green')
+    yellow = colors('yellow') 
+    
+    if hit>=buffhitwarn:
+        print "%s%-6.2f\x1B[0m" % (green, hit),
+    elif hit>=buffhitcritic and hit<buffhitwarn:
+        print "%s%-6.2f\x1B[0m" % (yellow, hit),
+    else:
+        print "%s%-6.2f\x1B[0m" % (red, hit),
+
+
+    print '|',
+    
+    # print out the connect info
+    connectinfo = conninfo() 
+    run = connectinfo['runn']
+    conn = connectinfo['conn']
+    cre  = connectinfo['cre']
+    cah  = connectinfo['cah']
+    print "%-4d" % run,
+    print "%-4d" % conn,
+    print "%-4d" % cre,
+    print "%-4d" % cah,
+
+    print ''
+
+
+def colorprint(warn, critic, info, type):
+    red    = colors('red')   
+    green  = colors('green')
+    yellow = colors('yellow')
+     
+    str = '' 
+    if type == 'float':
+        str = "%s%-.2f\x1B[0m"
+    elif type == 'int':
+        str = "%s%-4d\x1B[0m"
+    
+    if info < warn:
+        print str %(green, info),
+    elif info>=warn and info<critic:
+        print str %(yellow, info), 
+    else:
+        print str %(red, info),
+
+
+
+def currenttime():
+    now = datetime.datetime.now()
+    hhmmss = now.strftime("%H:%M:%S") 
+    return hhmmss
+
+
+def loadinfo():
+    cmd  = "awk '{print $1,$2,$3}' /proc/loadavg"
+    load =  os.popen(cmd).read().strip('\n').split(' ')
+    return load
+ 
+
+def qpsinfo():
+    qpslist = {
+        'Com_select':           0,
+        'Com_update':           0,
+        'Com_delete':           0,
+        'Com_insert':           0,
+        'Com_replace':          0,
+        'Uptime':               0
+    }
+
+    qpscmd = gen_sqlstr(qpslist, 'status') 
+    qpscmd = mysqlcmd + qpscmd
+    qpsresult = os.popen(qpscmd).read().strip('\n').split('\n')
+
+    if qpsold:
+        for kv in qpsresult:
+          k=kv.split('\t')[0]
+          v=int(kv.split('\t')[1])
+          qpsval[k] = v - qpsold[k]
+
+          qpsold[k] = v
+
+    else:
+        qpsval['Com_select']  = 0
+        qpsval['Com_insert']  = 0
+        qpsval['Com_update']  = 0
+        qpsval['Com_delete']  = 0
+        qpsval['Com_replace'] = 0
+        qpsval['Uptime']      = 1
+
+        for kv in qpsresult:
+            k=kv.split('\t')[0]
+            v=int(kv.split('\t')[1])
+            qpsold[k] = v
+
+    #return qpsval
+    qpsnow['sel'] = int(qpsval['Com_select']/qpsval['Uptime'])
+    qpsnow['ins'] = int(qpsval['Com_insert']/qpsval['Uptime'])
+    qpsnow['upd'] = int(qpsval['Com_update']/qpsval['Uptime'])
+    qpsnow['del'] = int(qpsval['Com_delete']/qpsval['Uptime'])
+    qpsnow['rep'] = int(qpsval['Com_replace']/qpsval['Uptime'])
+    qpsnow['qps'] = qpsnow['sel']+qpsnow['ins']+qpsnow['upd']+qpsnow['del']+qpsnow['rep']
+    qpsnow['tps'] = qpsnow['ins']+qpsnow['upd']+qpsnow['del']+qpsnow['rep']
+
+    return qpsnow
+
+def innobuffhit():
+    
+    buff_info = ['Innodb_buffer_pool_read_requests',
+                'Innodb_buffer_pool_reads',
+                'Uptime'
+               ]
+    dbcmd = gen_sqlstr(buff_info, 'status')
+    dbcmd = mysqlcmd + dbcmd
+    result = os.popen(dbcmd).read().strip('\n').split('\n')
+    
+    if innobuffold:
+        for kv in result:
+            k = kv.split('\t')[0]
+            v = int(kv.split('\t')[1])
+            innobuffval[k] = v - innobuffold[k]
+            innobuffold[k] = v
+    else:
+        innobuffval['Innodb_buffer_pool_read_requests'] = 1
+        innobuffval['Innodb_buffer_pool_reads']  = 1
+        innobuffval['Uptime']    = 1
+
+        for kv in result:
+            k = kv.split('\t')[0]
+            v = int(kv.split('\t')[1])
+            innobuffold[k] = v
+
+    innobuffnow['lor'] = int(innobuffval['Innodb_buffer_pool_read_requests']/innobuffval['Uptime'])
+    innobuffnow['hit'] = 100*(innobuffval['Innodb_buffer_pool_read_requests'] - innobuffval['Innodb_buffer_pool_reads'])/(innobuffval['Innodb_buffer_pool_read_requests'] + 1)
+    return innobuffnow
+
+
+
+
+connold = {}
+connval = {}
+connnow = {}
+def conninfo():
+    conninfo = {
+        'Threads_connected':   1,
+        'Threads_cached':      1,
+        'Threads_created':     0,
+        'Uptime':              1
+    }
+    cmd = gen_sqlstr(conninfo, 'status')
+    cmd = mysqlcmd + cmd
+    result = os.popen(cmd).read().strip('\n').split('\n')   
+  
+ 
+    if connold:
+        for kv in result:
+            k = kv.split('\t')[0]
+            v = int(kv.split('\t')[1])
+            if k == 'Threads_created':
+                connval[k] = v - connold['Threads_created']
+            else:
+                connval[k] = v
+            connold[k] = v       
+         
+    else:
+        connval['Threads_connected'] = 0
+        connval['Threads_cached']    = 0
+        connval['Threads_created']   = 0
+        connval['Uptime']            = 1
+
+        for kv in result:
+            k = kv.split('\t')[0]
+            v = int(kv.split('\t')[1])
+            connold[k] = v
+                
+    connnow['conn'] = connval['Threads_connected']
+    connnow['cah']  = connval['Threads_cached']
+    connnow['cre']  = int(connval['Threads_created']/connval['Uptime'])
+  
+ 
+  
+    threadrunnig_sql = "SELECT COUNT(1) AS threadruning FROM performance_schema.threads WHERE PROCESSLIST_COMMAND='Query'"
+    cmd = mysqlcmd +'"'+ threadrunnig_sql+'"'
+    resulx = os.popen(cmd).read().strip('\n').split('\n')
+    connnow['runn'] = int(resulx[0])
+
+    return connnow
+
+def import_variables():
+   #import_sys_variables() 
+   import_db_info()
+   import_mysql_variables()
+
+
+def usage():
+    print "usage: ./dbaeye ......"
+
+## redirect the stderr to /dev/null ...
+sys.stderr.flush()
+se = file("/dev/null", 'a+', 0)
+os.dup2(se.fileno(), sys.stderr.fileno())
+
+import_variables()
+
+qpsold = {}
+qpsval = {}
+qpsnow = {}
+innobuffold = {}
+innobuffval = {}
+innobuffnow = {}
+loadwarn   = 6.00
+loadcritic = 10.00
+sqlwarn    = 5000
+sqlcritic  = 10000
+buffhitwarn = 99.00
+buffhitcritic = 98.00
+i = 0
+
+while(1):
+  try:
+      if i%20 == 0:
+          baseline()
+      getbasekpi()
+      time.sleep(1)
+      i += 1
+  except EOFError:
+      sys.exit(1)
+  except KeyboardInterrupt, e:
+      sys.exit(0)
+  except:
+      sys.exit(0)
+
+
