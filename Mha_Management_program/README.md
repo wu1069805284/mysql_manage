@@ -1,4 +1,5 @@
 思路：为了实现mysql的高可用的集中化管理，自动初始集群到MHA的管理中来，以mysql集群的唯一性进行统一识别与管理。
+
 功能：
 一、初始化mysql集群到mha。
 二、自动初始化集群主机之间的公钥认证（可选）。
@@ -30,10 +31,12 @@ Usage: python HA_management.py [options]
   -l cluster name|all, --list=cluster name|all
                         View the state of mysql cluster in mha
 
+
 使用方法：
 yum install perl-DBD-MySQL perl-Config-Tiny perl-Log-Dispatch perl-Parallel-ForkManager perl-Time-HiRes -y
 
 一、把Mha_Management_program管理程序放在的机器保证该主机对所有mysql主机能自动登录，例如bmon。
+
 二、配置文件说明：
 配置文件：Mha_Management_program/mha_management/file/config.cfg
 vip添加卸载、通知脚本：Mha_Management_program/vip_manager/formwork/*,目前默认采用的ifconfig
@@ -54,6 +57,7 @@ mysql_port：管理节点端口
  
 四、执行文件路径
 Mha_Management_program/mha_management/HA_management.py  --help
+
 
 需要改进的功能需求：
 1、vip切换通知功能。
