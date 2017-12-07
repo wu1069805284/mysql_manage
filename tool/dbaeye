@@ -8,8 +8,8 @@ import re
 import datetime
 
 
-dbuser= 'dbaeye'
-dbpass= 'NicePrivate@2015'
+dbuser= ''
+dbpass= ''
 host  = '127.0.0.1'
 port  = '3306'
 cmdstr  = ' -h'+host
