@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #coding=utf-8
 #create by wuweijian
+#date: 2017-11-26
+#==============================================================
 
 import commands,os,sys
 from lib.detection import * 
