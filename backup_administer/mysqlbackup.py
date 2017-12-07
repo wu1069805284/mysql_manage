@@ -54,8 +54,8 @@ def get_mysqld_ports():
 ## Get the data dir addr.
 def get_datadir(portx):
     dbaddr = '127.0.0.1'
-    dbuser = 'dbaeye'
-    dbpass = 'NicePrivate@2015'
+    dbuser = ''
+    dbpass = ''
 
     #conn = pymysql.connect(host=dbaddr, port=int(portx), user=dbuser, passwd=dbpass)
     conn = MySQLdb.connect(host=dbaddr, port=int(portx), user=dbuser, passwd=dbpass)
@@ -90,9 +90,9 @@ def get_data_size(dirs):
 
 def insert_datadir_size():
     portlist = get_mysqld_ports()
-    remotehost = '10.10.10.198'
-    remoteuser = 'dbaeye'
-    remotepass = 'NicePrivate@2015'
+    remotehost = ''
+    remoteuser = ''
+    remotepass = ''
     remoteport = 3306
 
     localip=get_ip_address()
@@ -118,9 +118,9 @@ insert_datadir_size()
 
 
 def backup_isornot(portx):
-    remotehost = '10.10.10.198'
-    remoteuser = 'dbaeye'
-    remotepass = 'NicePrivate@2015'
+    remotehost = ''
+    remoteuser = ''
+    remotepass = ''
     remoteport = 3306
 
     portlist = get_mysqld_ports()
@@ -139,8 +139,8 @@ def backup_isornot(portx):
 
 def get_conf_file(portx):
     localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localuser = ''
+    localpass = ''
     localport = int(portx) 
 
     conn = MySQLdb.connect(host=localhost, port=localport, user=localuser, passwd=localpass, charset='utf8')
@@ -158,8 +158,8 @@ def get_conf_file(portx):
 
 def master_or_slave(portx):
     localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localuser = ''
+    localpass = ''
     localport = int(portx) 
 
     conn = MySQLdb.connect(host=localhost, port=localport, user=localuser, passwd=localpass, charset='utf8')
@@ -175,9 +175,9 @@ def master_or_slave(portx):
     return int(result[0][0])
 
 def get_slave_parallel_workers(portx):
-    localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localhost = ''
+    localuser = ''
+    localpass = ''
     localport = int(portx)
 
     conn = MySQLdb.connect(host=localhost, port=localport, user=localuser, passwd=localpass, charset='utf8')
@@ -194,8 +194,8 @@ def get_slave_parallel_workers(portx):
 
 def set_slave_parallel_workers(portx, num):
     localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localuser = ''
+    localpass = ''
     localport = int(portx)
     nums      = int(num)
 
@@ -211,8 +211,8 @@ def set_slave_parallel_workers(portx, num):
 
 def get_db_names(portx):
     localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localuser = ''
+    localpass = ''
     localport = int(portx)
     
     filters = [
@@ -239,8 +239,8 @@ def get_db_names(portx):
 
 def get_master_info(portx):
     localhost = '127.0.0.1'
-    localuser = 'dbaeye'
-    localpass = 'NicePrivate@2015'
+    localuser = ''
+    localpass = ''
     localport = int(portx)
 
     conn = MySQLdb.connect(host=localhost, port=localport, user=localuser, passwd=localpass, charset='utf8')
@@ -257,9 +257,9 @@ def get_master_info(portx):
 
 
 def get_cluster_name(dbnames):
-    remotehost = '10.10.10.198'
-    remoteuser = 'dbaeye'
-    remotepass = 'NicePrivate@2015'
+    remotehost = ''
+    remoteuser = ''
+    remotepass = ''
     remoteport = 3306 
 
     conn = MySQLdb.connect(host=remotehost, port=int(remoteport), user=remoteuser, passwd=remotepass, db="db_stats", charset="utf8")
@@ -281,9 +281,9 @@ def backup_main():
     gmtcreate = currenttime()
     gmtdate   = currentdate()
 
-    remotehost = '10.10.10.198'
-    remoteuser = 'dbaeye'
-    remotepass = 'NicePrivate@2015'
+    remotehost = ''
+    remoteuser = ''
+    remotepass = ''
     remoteport = 3306
     
     for portx in portlist:
@@ -326,13 +326,8 @@ def backup_main():
             cmd0 += gmtdate
             cmd0 += "/"
             cmd0 += clustername
-            #cmd0 += '''"'''
-            #cmd0 += clustername
-            #cmd0 = '''ssh root@blog05 "mkdir -p /home/data/mysql/'''
-            #cmd0 += gmtdate
-            #cmd0 += "/"
-            #cmd0 += clustername
-            #cmd0 += '''"'''
+            
+           
     
             os.popen(cmd0)
             
