@@ -1,8 +1,8 @@
 [server default]
 user=mha
 password=123456
-repl_user=dbsync
-repl_password=Cyrz7D42U06bmHH
+repl_user=
+repl_password=
 
 ssh_user=root
 ping_interval=3
