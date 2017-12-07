@@ -23,9 +23,9 @@ class WriteLog(object):
 class MySQLbackup(object):
 	def __init__(self):
 		self.bakuser = 'dbaeye'
-		self.bakpass = 'NicePrivate@2015'
-		self.localhost = '127.0.0.1'
-		self.remotehost = '10.10.10.198'
+		self.bakpass = ''
+		self.localhost = ''
+		self.remotehost = ''
 		self.remoteport = 3306
 		self.log = WriteLog()
 		_failed_times = 0
