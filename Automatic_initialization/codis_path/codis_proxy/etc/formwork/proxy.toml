@@ -1,0 +1,14 @@
+product_name = "product-name"
+product_auth = ""
+session_auth = ""
+admin_addr = "admin-addr"
+proto_type = "tcp4"
+proxy_addr = "proxy-addr"
+jodis_addr = ""
+jodis_timeout = 10
+backend_ping_period = 5
+session_max_timeout = 1800
+session_max_bufsize = 131072
+session_max_pipeline = 1024
+session_keepalive_period = 60
+proxy_max_clients = 10000

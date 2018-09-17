@@ -1,0 +1,64 @@
+#!/bin/bash
+## Note:Auto Login MySQL Server 
+##
+## Created by wuweijian 
+## 2015/08/10[Init]
+##
+## Change log
+source /etc/profile
+export LANG=en_US.UTF-8
+
+function  Usage()
+{
+	echo "Usage: sh $0 port[port must be number]" 
+}
+
+if [[ "$#" -ne 1 ]]  
+then
+     Usage
+     exit 1
+fi
+
+user='root'
+password='ksGQPtaBGEI0H02U0v'
+if [ $# -eq 1 ]
+then
+	port=$1
+	if [ "`expr $port + 0`" == "" ]
+	then
+		Usage
+		exit 1
+	fi
+fi
+
+socket=/home/work/mysql${port}/tmp/mysql${port}.sock
+if [ ! -S $socket ]
+then
+    socket=/home/work/tmp/mysql${port}.sock
+    if [ ! -S $socket ]
+    then
+	    echo "Can't find socket file,Check it!"
+	    exit 1
+    fi
+fi
+
+mysql57=/opt/mysql5721
+if [ -d $mysql57 ]
+then 
+  	$mysql57/bin/mysql -A -u $user -p$password  -S $socket -P $port --connect_timeout=10 --prompt="(\u@\d)>" --show-warnings
+    if [ $? -ne 0 ]; then
+        user='superdba'
+        $mysql57/bin/mysql -A -u $user -p$password  -S $socket -P $port --connect_timeout=10 --prompt="(\u@\d)>" --show-warnings
+        exit 0
+    fi
+elif [ -d /usr/bin ]
+then
+  	/usr/bin/mysql -A -u $user -p$password -S $socket -P $port  --connect_timeout=10 --prompt="(\u@\d)>" --show-warnings
+	exit 0
+else
+	echo "Login Error!"
+	echo "You Must Have a MySQL client!"
+	exit 1
+fi
+
+exit 0
