@@ -1,0 +1,15 @@
+[server default]
+manager_workdir=
+manager_log=
+
+
+userlist
+ping_interval=3
+master_binlog_dir=
+remote_workdir=
+
+
+#slave check
+secondary_check_script= 
+
+
